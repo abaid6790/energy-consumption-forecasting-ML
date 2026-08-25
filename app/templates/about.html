@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block page_title %}About the System{% endblock %}
+
+{% block content %}
+<div class="card section">
+    <div class="card-title">Energy Consumption Forecasting System</div>
+    <p>
+        This application analyzes historical electricity consumption, engineers time-series
+        features (calendar, cyclical, lag, and rolling statistics), and trains multiple
+        forecasting models — a naive baseline, moving average, linear regression, random
+        forest, and XGBoost — comparing them on a strictly chronological train/validation/test
+        split. The best model by validation RMSE is used to generate future forecasts,
+        surfaced through an interactive dashboard.
+    </p>
+    <p>
+        All charts, metrics, and insights are computed from the actual dataset and the actual
+        trained model — nothing on this site is hardcoded or fabricated.
+    </p>
+</div>
+
+<div class="card section">
+    <div class="card-title">Default Dataset</div>
+    <p>
+        The reference dataset is the UCI <em>Individual Household Electric Power Consumption</em>
+        dataset (Hebrail &amp; Berard, 2006): minute-level readings from a single household near
+        Paris, France, December 2006–November 2010. See <code>data/README.md</code> for how to
+        download and prepare it. A synthetic sample dataset with the same schema ships with this
+        repo so the project runs immediately without any download.
+    </p>
+</div>
+
+<div class="card section">
+    <div class="card-title">Limitations</div>
+    <ul>
+        <li>Forecasts are statistical estimates, not guarantees, and cannot account for unexpected real-world events.</li>
+        <li>Confidence intervals (where shown) are derived from validation error, not formal prediction intervals for every model type.</li>
+        <li>Anomaly flags indicate statistical outliers, not confirmed equipment faults.</li>
+    </ul>
+</div>
+{% endblock %}

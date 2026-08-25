@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Forecast{% endblock %}
+{% block page_title %}Forecast Energy Consumption{% endblock %}
+
+{% block content %}
+{% if not ready %}
+<div class="error-state section">
+    No trained model found. Run <code>python ml/train.py</code> first, then reload this page.
+</div>
+{% endif %}
+
+<div class="two-col">
+    <div class="card">
+        <div class="card-title">Forecast Chart</div>
+        <div id="forecast-chart" style="height: 380px;"></div>
+        <div id="forecast-loading" class="loading-state" style="display:none; margin-top: 14px;">Generating forecast…</div>
+        <div id="forecast-error" class="error-state" style="display:none; margin-top: 14px;"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Controls</div>
+        <label for="frequency-select">Frequency</label>
+        <select id="frequency-select">
+            {% for f in frequencies %}
+            <option value="{{ f }}">{{ f|capitalize }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="horizon-select">Forecast Horizon</label>
+        <select id="horizon-select">
+            {% for h in horizons %}
+            <option value="{{ h }}">Next {{ h }} {{ 'Days' if h != 1 else 'Day' }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Model</label>
+        <select disabled>
+            <option>Best Model ({{ best_model }})</option>
+        </select>
+
+        <button class="btn" id="generate-btn" {% if not ready %}disabled{% endif %}>Generate Forecast</button>
+        <div style="margin-top:14px;">
+            <a class="btn btn-secondary" id="download-btn" href="#">Download forecast.csv</a>
+        </div>
+    </div>
+</div>
+
+<div class="card section">
+    <div class="card-title">Forecast Table</div>
+    <div id="forecast-table-wrap" class="table-wrap">
+        <div class="empty-state">Generate a forecast to see results here.</div>
+    </div>
+</div>
+
+<footer class="disclaimer">
+    Confidence intervals (where shown) are statistical uncertainty estimates derived from validation error, not guarantees. Forecasts are model outputs and may not reflect unexpected real-world events.
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const generateBtn = document.getElementById('generate-btn');
+const downloadBtn = document.getElementById('download-btn');
+
+async function generateForecast() {
+    const horizon = parseInt(document.getElementById('horizon-select').value, 10);
+    const frequency = document.getElementById('frequency-select').value;
+
+    document.getElementById('forecast-loading').style.display = 'block';
+    document.getElementById('forecast-error').style.display = 'none';
+    generateBtn.disabled = true;
+
+    try {
+        const resp = await fetch('/api/forecast', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ horizon, frequency })
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Unable to generate forecast.');
+
+        const histX = data.history.map(d => d.timestamp);
+        const histY = data.history.map(d => d.energy_consumption);
+        const fcX = data.forecast.map(d => d.timestamp);
+        const fcY = data.forecast.map(d => d.predicted_consumption);
+        const lowerY = data.forecast[0].lower_bound !== undefined ? data.forecast.map(d => d.lower_bound) : null;
+        const upperY = data.forecast[0].upper_bound !== undefined ? data.forecast.map(d => d.upper_bound) : null;
+
+        renderForecastChart('forecast-chart', histX, histY, fcX, fcY, lowerY, upperY, data.unit);
+
+        const hasBounds = lowerY !== null;
+        let rows = data.forecast.map(d => `
+            <tr>
+                <td>${d.timestamp}</td>
+                <td>${d.predicted_consumption} ${data.unit}</td>
+                ${hasBounds ? `<td>${d.lower_bound}</td><td>${d.upper_bound}</td>` : ''}
+            </tr>`).join('');
+        document.getElementById('forecast-table-wrap').innerHTML = `
+            <table>
+                <thead><tr><th>Forecast Date</th><th>Predicted Consumption</th>${hasBounds ? '<th>Lower Bound</th><th>Upper Bound</th>' : ''}</tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+
+        downloadBtn.href = `/api/forecast/download?horizon=${horizon}`;
+    } catch (err) {
+        document.getElementById('forecast-error').style.display = 'block';
+        document.getElementById('forecast-error').textContent = err.message;
+    } finally {
+        document.getElementById('forecast-loading').style.display = 'none';
+        generateBtn.disabled = false;
+    }
+}
+
+generateBtn?.addEventListener('click', generateForecast);
+if (generateBtn && !generateBtn.disabled) generateForecast();
+</script>
+{% endblock %}

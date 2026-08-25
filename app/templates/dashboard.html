@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block dataset_badge %}{{ dataset_name }}{% endblock %}
+
+{% block content %}
+{% if not ready %}
+<div class="error-state section">
+    No trained model found. Run <code>python ml/train.py</code> first, then reload this page.
+</div>
+{% endif %}
+
+<div class="grid">
+    <div class="card stat-card">
+        <div class="stat-label">Current</div>
+        <div class="stat-value">{{ summary.current if summary.current is not none else '—' }}{% if summary.current is not none %} <span style="font-size:0.9rem;color:var(--text-muted);">{{ summary.unit }}</span>{% endif %}</div>
+        <div class="stat-sub">Most recent reading</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-label">Average</div>
+        <div class="stat-value">{{ summary.average if summary.average is not none else '—' }}{% if summary.average is not none %} <span style="font-size:0.9rem;color:var(--text-muted);">{{ summary.unit }}</span>{% endif %}</div>
+        <div class="stat-sub">Across recorded history</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-label">Peak</div>
+        <div class="stat-value">{{ summary.peak if summary.peak is not none else '—' }}{% if summary.peak is not none %} <span style="font-size:0.9rem;color:var(--text-muted);">{{ summary.unit }}</span>{% endif %}</div>
+        <div class="stat-sub">Highest recorded value</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-label">Next 7 Days (Forecast)</div>
+        <div class="stat-value">{{ summary.next_7_days_total if summary.next_7_days_total is not none else '—' }}{% if summary.next_7_days_total is not none %} <span style="font-size:0.9rem;color:var(--text-muted);">{{ summary.unit }}</span>{% endif %}</div>
+        <div class="stat-sub">Best model: {{ summary.best_model }}</div>
+    </div>
+</div>
+
+<div class="card section">
+    <div class="card-title">Historical Consumption</div>
+    <div id="history-chart" style="height: 380px;"></div>
+</div>
+
+<footer class="disclaimer">
+    All figures are calculated directly from the active dataset and the saved forecasting model. No values on this page are hardcoded.
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const dailyData = {{ daily|tojson }};
+renderLineChart('history-chart', [{
+    x: dailyData.map(d => d.timestamp),
+    y: dailyData.map(d => d.value),
+    name: 'Consumption',
+    color: '#2563EB'
+}], 'Energy Consumption ({{ summary.unit }})');
+</script>
+{% endblock %}

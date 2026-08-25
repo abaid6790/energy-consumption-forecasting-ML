@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Energy Analytics{% endblock %}
+{% block page_title %}Energy Analytics{% endblock %}
+
+{% block content %}
+<div class="card section">
+    <div class="card-title">Insights</div>
+    {% if insights %}
+    <ul class="insight-list">
+        {% for insight in insights %}
+        <li>{{ insight }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-state">No insights available yet.</div>
+    {% endif %}
+</div>
+
+<div class="two-col section">
+    <div class="card">
+        <div class="card-title">Hourly Pattern</div>
+        {% if hourly %}
+        <div id="hourly-chart" style="height:300px;"></div>
+        {% else %}
+        <div class="empty-state">Hourly patterns require sub-daily data (dataset is at daily+ resolution).</div>
+        {% endif %}
+    </div>
+    <div class="card">
+        <div class="card-title">Day-of-Week Pattern</div>
+        <div id="dow-chart" style="height:300px;"></div>
+    </div>
+</div>
+
+<div class="two-col section">
+    <div class="card">
+        <div class="card-title">Weekly Consumption</div>
+        <div id="weekly-chart" style="height:300px;"></div>
+    </div>
+    <div class="card">
+        <div class="card-title">Monthly Consumption</div>
+        <div id="monthly-chart" style="height:300px;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const hourly = {{ hourly|tojson }};
+const dow = {{ day_of_week|tojson }};
+const weekly = {{ weekly|tojson }};
+const monthly = {{ monthly|tojson }};
+
+if (hourly.length) renderBarChart('hourly-chart', hourly.map(d => d.hour + ':00'), hourly.map(d => d.value), 'Avg Consumption', '#2563EB');
+renderBarChart('dow-chart', dow.map(d => d.day), dow.map(d => d.value), 'Avg Consumption', '#16A34A');
+renderLineChart('weekly-chart', [{ x: weekly.map(d => d.period), y: weekly.map(d => d.value), name: 'Weekly Avg', color: '#F59E0B' }], 'Avg Consumption');
+renderLineChart('monthly-chart', [{ x: monthly.map(d => d.period), y: monthly.map(d => d.value), name: 'Monthly Avg', color: '#DC2626' }], 'Avg Consumption');
+</script>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Anomaly Detection{% endblock %}
+{% block page_title %}Anomaly Detection{% endblock %}
+
+{% block content %}
+<div class="card section">
+    <div class="card-title">Consumption with Flagged Anomalies ({{ count }} found)</div>
+    <div id="anomaly-chart" style="height:380px;"></div>
+</div>
+
+<div class="card section">
+    <div class="card-title">Anomaly List</div>
+    {% if anomalies %}
+    {% for a in anomalies %}
+    <div class="anomaly-item">
+        <span>⚠ {{ a.date }} — {{ a.consumption }}</span>
+        {% if a.expected_range %}
+        <span style="color:var(--text-muted);">Expected range: {{ a.expected_range[0] }}–{{ a.expected_range[1] }}</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">No anomalies detected in the current dataset.</div>
+    {% endif %}
+</div>
+
+<footer class="disclaimer">
+    Anomalies are statistical outliers (rolling z-score, IQR, and Isolation Forest), not confirmed equipment faults — they flag consumption worth reviewing.
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const points = {{ chart_data|tojson }};
+renderAnomalyChart('anomaly-chart', points);
+</script>
+{% endblock %}

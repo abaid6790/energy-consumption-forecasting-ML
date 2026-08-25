@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Model Performance{% endblock %}
+{% block page_title %}Model Performance{% endblock %}
+
+{% block content %}
+{% if not ready %}
+<div class="error-state section">No trained model found. Run <code>python ml/train.py</code> first.</div>
+{% else %}
+
+<div class="grid">
+    <div class="card stat-card">
+        <div class="stat-label">Best Model</div>
+        <div class="stat-value" style="font-size:1.3rem;">{{ best_model }}</div>
+    </div>
+    {% set best_row = comparison[0] if comparison else {} %}
+    <div class="card stat-card"><div class="stat-label">MAE</div><div class="stat-value">{{ best_row.MAE }}</div></div>
+    <div class="card stat-card"><div class="stat-label">RMSE</div><div class="stat-value">{{ best_row.RMSE }}</div></div>
+    <div class="card stat-card"><div class="stat-label">R²</div><div class="stat-value">{{ best_row.R2 }}</div></div>
+</div>
+
+<div class="card section">
+    <div class="card-title">Model Comparison (Test Set)</div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Model</th><th>MAE</th><th>MSE</th><th>RMSE</th><th>MAPE</th><th>R²</th></tr></thead>
+            <tbody>
+                {% for row in comparison %}
+                <tr {% if row.model == best_model %}style="background:var(--success-soft);"{% endif %}>
+                    <td>{{ row.model }}{% if row.model == best_model %} <span class="badge badge-success">Best</span>{% endif %}</td>
+                    <td>{{ row.MAE }}</td>
+                    <td>{{ row.MSE }}</td>
+                    <td>{{ row.RMSE }}</td>
+                    <td>{{ row.MAPE }}%</td>
+                    <td>{{ row.R2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card section">
+    <div class="card-title">Feature Importance {% if not feature_importance %}(not available for this model type){% endif %}</div>
+    {% if feature_importance %}
+    {% for f in feature_importance %}
+    <div class="bar-row">
+        <div class="bar-label">{{ f.feature }}</div>
+        <div class="bar-track"><div class="bar-fill" style="width: {{ (f.importance * 100) | round(1) }}%;"></div></div>
+        <div class="bar-value">{{ (f.importance * 100) | round(1) }}%</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">The current best model does not expose feature importances (e.g. Linear Regression). Train with Random Forest or XGBoost selected to see this.</div>
+    {% endif %}
+</div>
+
+<footer class="disclaimer">
+    Metrics come directly from the saved evaluation produced by <code>ml/train.py</code> on a chronological, unshuffled test split. Trained at: {{ metadata.trained_at }}.
+</footer>
+{% endif %}
+{% endblock %}

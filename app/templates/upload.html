@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Dataset Upload{% endblock %}
+{% block page_title %}Dataset Upload{% endblock %}
+
+{% block content %}
+<div class="card section">
+    <div class="card-title">Upload a CSV</div>
+    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:-6px;">
+        Required columns: <code>timestamp</code> and <code>energy_consumption</code> (or <code>date</code> / <code>consumption</code>). Max file size is set by the server.
+    </p>
+    <div class="upload-zone">
+        <input type="file" id="file-input" accept=".csv" style="max-width:320px; margin: 0 auto;">
+        <div style="margin-top:14px;">
+            <button class="btn" id="upload-btn">Upload &amp; Validate</button>
+        </div>
+    </div>
+    <div id="upload-loading" class="loading-state" style="display:none; margin-top:14px;">Validating file…</div>
+    <div id="upload-error" class="error-state" style="display:none; margin-top:14px;"></div>
+</div>
+
+<div id="preview-section" class="section" style="display:none;">
+    <div class="grid">
+        <div class="card stat-card"><div class="stat-label">Rows</div><div class="stat-value" id="prev-rows">—</div></div>
+        <div class="card stat-card"><div class="stat-label">Date Range</div><div class="stat-value" style="font-size:1rem;" id="prev-range">—</div></div>
+        <div class="card stat-card"><div class="stat-label">Missing Values</div><div class="stat-value" id="prev-missing">—</div></div>
+        <div class="card stat-card"><div class="stat-label">Average</div><div class="stat-value" id="prev-avg">—</div></div>
+    </div>
+    <div class="card">
+        <div class="card-title">Preview (first rows)</div>
+        <div class="table-wrap" id="preview-table"></div>
+    </div>
+</div>
+
+<footer class="disclaimer">
+    Uploaded files are validated server-side and are never executed. To use a validated dataset for forecasting, retrain the model against it via <code>ml/train.py --data &lt;path&gt;</code>.
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('upload-btn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('file-input');
+    const errorBox = document.getElementById('upload-error');
+    const loadingBox = document.getElementById('upload-loading');
+    errorBox.style.display = 'none';
+
+    if (!fileInput.files.length) {
+        errorBox.style.display = 'block';
+        errorBox.textContent = 'Please choose a CSV file first.';
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    loadingBox.style.display = 'block';
+
+    try {
+        const resp = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Upload failed.');
+
+        const p = data.preview;
+        document.getElementById('prev-rows').textContent = p.rows;
+        document.getElementById('prev-range').textContent = p.date_range.join(' → ');
+        document.getElementById('prev-missing').textContent = p.missing_values;
+        document.getElementById('prev-avg').textContent = p.average_consumption;
+
+        let rows = p.preview_rows.map(r => `<tr><td>${r.timestamp}</td><td>${r.energy_consumption}</td></tr>`).join('');
+        document.getElementById('preview-table').innerHTML = `
+            <table><thead><tr><th>Timestamp</th><th>Energy Consumption</th></tr></thead><tbody>${rows}</tbody></table>`;
+        document.getElementById('preview-section').style.display = 'block';
+    } catch (err) {
+        errorBox.style.display = 'block';
+        errorBox.textContent = err.message;
+    } finally {
+        loadingBox.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

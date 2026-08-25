@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Forecast History{% endblock %}
+{% block page_title %}Forecast History{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">Recent Forecasting Runs</div>
+    {% if runs %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Created</th><th>Dataset</th><th>Frequency</th><th>Horizon</th>
+                    <th>Model</th><th>Forecast Range</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in runs %}
+                <tr>
+                    <td>{{ r.created_at[:19].replace('T', ' ') }}</td>
+                    <td>{{ r.dataset_name }}</td>
+                    <td>{{ r.forecast_frequency|capitalize }}</td>
+                    <td>{{ r.forecast_horizon }}</td>
+                    <td>{{ r.model_name }}</td>
+                    <td>{{ r.forecast_start }} → {{ r.forecast_end }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">No forecasts have been generated yet. Visit the Forecast page to create one.</div>
+    {% endif %}
+</div>
+{% endblock %}
