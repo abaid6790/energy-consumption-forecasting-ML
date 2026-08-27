@@ -792,29 +792,28 @@ screenshots/
 
 Example:
 
-```markdown
 ## 📸 Screenshots
 
 ### Dashboard
 
-![Dashboard](screenshots/dashboard.png)
+![Dashboard](./screenshots/Dashboard.png)
 
 ### Forecasting
 
-![Forecast](screenshots/forecast.png)
+![Forecasting](./screenshots/Forecast.png)
 
 ### Energy Analytics
 
-![Analytics](screenshots/analytics.png)
+![Energy Analytics](./screenshots/analytics1.png)![Energy Analytics](./screenshots/analytics2.png)
 
 ### Anomaly Detection
 
-![Anomaly Detection](screenshots/anomalies.png)
+![Anomaly Detection](./screenshots/Anomaly-Detection.png)
 
 ### Model Performance
 
-![Model Performance](screenshots/model-performance.png)
-```
+![Model Performance](./screenshots/model-performance.png)
+
 
 ---
 
